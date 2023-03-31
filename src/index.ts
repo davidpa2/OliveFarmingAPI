@@ -1,6 +1,7 @@
+import {config as conf} from 'dotenv';
 import {ApplicationConfig, OliveFarmingApiApplication} from './application';
-
 export * from './application';
+
 
 export async function main(options: ApplicationConfig = {}) {
   const app = new OliveFarmingApiApplication(options);
@@ -14,6 +15,7 @@ export async function main(options: ApplicationConfig = {}) {
   return app;
 }
 
+conf();
 if (require.main === module) {
   // Run the application
   const config = {
