@@ -4,9 +4,9 @@ import {config as conf} from 'dotenv';
 
 conf();
 const config = {
-  name: 'mongo',
+  name: 'mongodb',
   connector: 'mongodb',
-  url: process.env.MONGODB_URL,
+  url: "",
   host: process.env.MONGODB_HOST,
   port: process.env.MONGODB_PORT,
   user: '',
