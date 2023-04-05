@@ -1,3 +1,4 @@
+import {inject} from '@loopback/core';
 import {
   Count,
   CountSchema,
@@ -15,16 +16,64 @@ import {
   post,
   put,
   requestBody,
+  Response,
   response,
+  RestBindings,
 } from '@loopback/rest';
+import {compare} from 'bcrypt';
+import {SignJWT} from 'jose';
+import {TextEncoder} from 'util';
 import {User} from '../models';
 import {UserRepository} from '../repositories';
+import {JwtResponse, LoginDTO} from './specs/user.controller.specs';
 
 export class UserController {
   constructor(
     @repository(UserRepository)
     public userRepository: UserRepository,
+    @inject(RestBindings.Http.RESPONSE)
+    private res: Response,
   ) { }
+
+  @post('/users/login')
+  @response(200, {
+    description: 'Valid token to login',
+    content: {'application/json': {schema: getModelSchemaRef(JwtResponse)}}
+  })
+  async login(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(LoginDTO, {
+            title: 'Login user',
+          })
+        }
+      }
+    })
+    user: User
+  ): Promise<JwtResponse | Record<string, any>> {
+    console.log(user);
+
+    // const {email, password} = req.body;
+
+    // const existingUserByEmail = await UserModel.findOne({email}).exec();
+    const existingUserByEmail = await this.userRepository.findOne({where: {email: user.email}});
+
+    if (!existingUserByEmail) return this.res.status(401).send({errors: ['Credenciales incorrectass']});
+
+    // const checkPassword = user.password === existingUserByEmail.password;
+    const checkPassword = await compare(user.password, existingUserByEmail.password)
+    if (!checkPassword) return this.res.status(401).send({errors: ['Credenciales incorrectas']});
+
+    const jwtConstructor = new SignJWT({id: existingUserByEmail._id});
+
+    const encoder = new TextEncoder();
+    const jwt = await jwtConstructor.setProtectedHeader({
+      alg: 'HS256', typ: 'JWT'
+    }).setIssuedAt().setExpirationTime('7d').sign(encoder.encode(process.env.JWT_PRIVATE_KEY));
+
+    return this.res.send({jwt});
+  }
 
   @post('/users')
   @response(200, {
