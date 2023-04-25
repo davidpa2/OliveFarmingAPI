@@ -9,7 +9,7 @@ export class RainRepository extends DefaultCrudRepository<
   RainRelations
 > {
   constructor(
-    @inject('datasources.mongodb') dataSource: MongoDataSource,
+    @inject('datasources.mongo') dataSource: MongoDataSource,
   ) {
     super(Rain, dataSource);
   }
