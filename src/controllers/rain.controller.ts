@@ -41,7 +41,7 @@ export class RainController {
       content: {
         'application/json': {
           schema: getModelSchemaRef(Rain, {
-            title: 'New rain log',
+            title: 'NewRainLog',
           }),
         },
       },
