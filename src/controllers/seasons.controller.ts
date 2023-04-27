@@ -2,7 +2,6 @@ import {uuid} from '@loopback/core';
 import {
   Count,
   CountSchema,
-  Filter,
   repository,
   Where
 } from '@loopback/repository';
@@ -66,10 +65,8 @@ export class SeasonsController {
       },
     },
   })
-  async find(
-    @param.filter(Seasons) filter?: Filter<Seasons>,
-  ): Promise<string[]> {
-    const seasonsInstances = await this.seasonsRepository.find(filter);
+  async find(): Promise<string[]> {
+    const seasonsInstances = await this.seasonsRepository.find({order: ['seasonCode', 'ASC']});
     const seasons: string[] = [];
     seasonsInstances.forEach(season => {
       seasons.push(season.seasonCode);
