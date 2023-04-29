@@ -1,5 +1,6 @@
 // Uncomment these imports to begin using these cool features!
 
+import {uuid} from '@loopback/core';
 import {Filter, repository} from '@loopback/repository';
 import {get, getModelSchemaRef, param, post, requestBody, response} from '@loopback/rest';
 import {Rain} from '../models';
@@ -47,8 +48,10 @@ export class RainController {
         },
       },
     })
-    rain: Rain,
+    rain: CreateRain,
   ): Promise<Rain> {
-    return this.rainRepository.create(rain);
+    return this.rainRepository.create(
+      {_id: uuid(), date: rain.date, liters: rain.liters, season: rain.season}
+    );
   }
 }
