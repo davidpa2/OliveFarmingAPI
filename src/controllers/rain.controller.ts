@@ -4,6 +4,7 @@ import {Filter, repository} from '@loopback/repository';
 import {get, getModelSchemaRef, param, post, requestBody, response} from '@loopback/rest';
 import {Rain} from '../models';
 import {RainRepository} from '../repositories';
+import {CreateRain} from './specs/rain.controller.specs';
 
 // import {inject} from '@loopback/core';
 
@@ -40,7 +41,7 @@ export class RainController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Rain, {
+          schema: getModelSchemaRef(CreateRain, {
             title: 'NewRainLog',
           }),
         },
