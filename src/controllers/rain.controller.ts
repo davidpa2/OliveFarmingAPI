@@ -17,7 +17,7 @@ export class RainController {
 
   @get('/rain')
   @response(200, {
-    description: 'Array of User model instances',
+    description: 'Array of Rain model instances',
     content: {
       'application/json': {
         schema: {
@@ -32,6 +32,26 @@ export class RainController {
   ): Promise<Rain[]> {
     return this.rainRepository.find(filter);
   }
+
+
+  @get('/rain/season/{season}')
+  @response(200, {
+    description: 'Array of Rain model instances',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(Rain, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async findBySeason(
+    @param.path.string('season') season: string,
+  ): Promise<Rain[]> {
+    return this.rainRepository.find({where: {season}});
+  }
+
 
   @post('/rain')
   @response(200, {
