@@ -2,7 +2,7 @@
 
 import {uuid} from '@loopback/core';
 import {Filter, repository} from '@loopback/repository';
-import {get, getModelSchemaRef, param, post, requestBody, response} from '@loopback/rest';
+import {del, get, getModelSchemaRef, param, post, requestBody, response} from '@loopback/rest';
 import {Rain} from '../models';
 import {RainRepository} from '../repositories';
 import {CreateRain} from './specs/rain.controller.specs';
@@ -73,5 +73,15 @@ export class RainController {
     return this.rainRepository.create(
       {_id: uuid(), date: rain.date, liters: rain.liters, season: rain.season}
     );
+  }
+
+  @del('/rain/{id}')
+  @response(204, {
+    description: 'Rain DELETE success',
+  })
+  async deleteById(@param.path.string('id') id: string): Promise<void> {
+    const rainLog = await this.rainRepository.findOne({where: {_id: id}})
+    await this.rainRepository.delete(rainLog!);
+    return;
   }
 }

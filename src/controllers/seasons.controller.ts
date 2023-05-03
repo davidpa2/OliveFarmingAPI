@@ -69,7 +69,7 @@ export class SeasonsController {
     return this.getAllSeasons();
   }
 
-  async getAllSeasons() {
+  async getAllSeasons(): Promise<string[]> {
     const seasonsInstances = await this.seasonsRepository.find({order: ['seasonCode', 'ASC']});
     const seasons: string[] = [];
     seasonsInstances.forEach(season => {
