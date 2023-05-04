@@ -79,9 +79,9 @@ export class RainController {
   @response(204, {
     description: 'Rain DELETE success',
   })
-  async deleteById(@param.path.string('id') id: string): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<object> {
     const rainLog = await this.rainRepository.findOne({where: {_id: id}})
     await this.rainRepository.delete(rainLog!);
-    return;
+    return {description: 'Rain DELETE success'};
   }
 }
