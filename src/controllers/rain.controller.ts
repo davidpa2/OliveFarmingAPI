@@ -49,7 +49,7 @@ export class RainController {
   async findBySeason(
     @param.path.string('season') season: string,
   ): Promise<Rain[]> {
-    return this.rainRepository.find({where: {season}});
+    return this.rainRepository.find({where: {season}, order: ['date desc']});
   }
 
 
