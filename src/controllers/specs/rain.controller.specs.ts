@@ -20,3 +20,13 @@ export class CreateRain {
   })
   liters: number;
 }
+
+
+@model()
+export class SeasonLitersResponse {
+  @property({
+    type: 'number',
+    required: true,
+  })
+  liters: number
+}

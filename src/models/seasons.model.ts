@@ -16,6 +16,12 @@ export class Seasons extends Entity {
   })
   seasonCode: string;
 
+  @property({
+    type: 'string',
+    required: true,
+  })
+  seasonLiters: number;
+
 
   constructor(data?: Partial<Seasons>) {
     super(data);
