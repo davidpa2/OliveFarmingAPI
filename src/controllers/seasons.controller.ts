@@ -38,7 +38,7 @@ export class SeasonsController {
     })
     params: CreateSeasonSchema,
   ): Promise<Seasons> {
-    return this.seasonsRepository.create(new Seasons({_id: uuid(), seasonCode: params.seasonCode}));
+    return this.seasonsRepository.create(new Seasons({_id: uuid(), seasonCode: params.seasonCode, seasonLiters: 0}));
   }
 
   @get('/seasons/count')
