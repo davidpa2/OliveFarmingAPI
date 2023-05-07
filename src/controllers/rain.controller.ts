@@ -4,7 +4,7 @@ import {uuid} from '@loopback/core';
 import {Filter, repository} from '@loopback/repository';
 import {del, get, getModelSchemaRef, param, post, requestBody, response} from '@loopback/rest';
 import {Rain} from '../models';
-import {RainRepository} from '../repositories';
+import {RainRepository, SeasonsRepository} from '../repositories';
 import {CreateRain, SeasonLitersResponse} from './specs/rain.controller.specs';
 
 // import {inject} from '@loopback/core';
@@ -13,6 +13,7 @@ import {CreateRain, SeasonLitersResponse} from './specs/rain.controller.specs';
 export class RainController {
   constructor(
     @repository(RainRepository) protected rainRepository: RainRepository,
+    @repository(SeasonsRepository) public seasonsRepository: SeasonsRepository,
   ) { }
 
   @get('/rain')
@@ -70,6 +71,10 @@ export class RainController {
     })
     rain: CreateRain,
   ): Promise<Rain> {
+    const season = await this.seasonsRepository.findOne({where: {seasonCode: rain.season}});
+    season!.seasonLiters += rain.liters;
+    await this.seasonsRepository.save(season!);
+    // this.seasonsRepository.update({seasonLiters: })
     return this.rainRepository.create(
       {_id: uuid(), date: rain.date, liters: rain.liters, season: rain.season}
     );
