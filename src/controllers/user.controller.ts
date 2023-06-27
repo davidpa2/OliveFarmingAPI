@@ -1,3 +1,5 @@
+import {authenticate, TokenService, UserService} from '@loopback/authentication';
+import {TokenServiceBindings} from '@loopback/authentication-jwt';
 import {inject} from '@loopback/core';
 import {
   Count,
@@ -15,65 +17,86 @@ import {
   patch,
   post,
   put,
+  Request,
   requestBody,
   Response,
   response,
-  RestBindings,
+  RestBindings
 } from '@loopback/rest';
-import {compare} from 'bcrypt';
-import {SignJWT} from 'jose';
-import {TextEncoder} from 'util';
-import {User} from '../models';
-import {UserRepository} from '../repositories';
-import {JwtResponse, LoginDTO} from './specs/user.controller.specs';
+import {UserServiceBindings} from '../keys';
+import {User, User as UserModel} from '../models';
+import {Credentials, UserRepository} from '../repositories';
+import {CredentialsRequestBody, UserMe} from './specs/user.controller.specs';
 
 export class UserController {
   constructor(
-    @repository(UserRepository)
-    public userRepository: UserRepository,
-    @inject(RestBindings.Http.RESPONSE)
-    private res: Response,
+    @inject(TokenServiceBindings.TOKEN_SERVICE) public jwtService: TokenService,
+    @inject(UserServiceBindings.USER_SERVICE) public userService: UserService<User, Credentials>,
+    // @inject(SecurityBindings.USER, {optional: true}) public user: UserProfile,
+    @repository(UserRepository) protected userRepository: UserRepository,
+    // @repository(UserRepositoryJWT) protected userRepositoryJWT: UserRepositoryJWT,
+    @inject(RestBindings.Http.RESPONSE) private res: Response,
+    @inject(RestBindings.Http.REQUEST) private request: Request,
   ) { }
 
-  @post('/users/login')
-  @response(200, {
-    description: 'Valid token to login',
-    content: {'application/json': {schema: getModelSchemaRef(JwtResponse)}}
+  @post('/users/login', {
+    responses: {
+      '200': {
+        description: 'Token',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                token: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   })
   async login(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(LoginDTO, {
-            title: 'Login user',
-          })
-        }
-      }
-    })
-    user: User
-  ): Promise<JwtResponse | Record<string, any>> {
-    console.log(user);
+    // user: LoginDTO
+    @requestBody(CredentialsRequestBody) credentials: Credentials,
+    // ): Promise<JwtResponse | Record<string, any>> {
+  ): Promise<{token: string}> {
+    console.log(credentials);
+    const validatedUser = await this.userService.verifyCredentials(credentials);
+    const userProfile = this.userService.convertToUserProfile(validatedUser);
+    const token = await this.jwtService.generateToken(userProfile);
+    return {token};
 
-    // const {email, password} = req.body;
-
-    // const existingUserByEmail = await UserModel.findOne({email}).exec();
-    const existingUserByEmail = await this.userRepository.findOne({where: {email: user.email}});
-
-    if (!existingUserByEmail) return this.res.status(401).send({errors: ['Credenciales incorrectass']});
+    // const existingUserByEmail = await this.userRepository.findOne({where: {email: user.email}});
+    // if (!existingUserByEmail) return this.res.status(401).send({errors: ['Credenciales incorrectass']});
 
     // const checkPassword = user.password === existingUserByEmail.password;
-    const checkPassword = await compare(user.password, existingUserByEmail.password)
-    if (!checkPassword) return this.res.status(401).send({errors: ['Credenciales incorrectas']});
+    // if (!checkPassword) return this.res.status(401).send({errors: ['Credenciales incorrectas']});
 
-    const jwtConstructor = new SignJWT({id: existingUserByEmail._id});
+    // const jwtConstructor = new SignJWT({id: existingUserByEmail._id},);
+    // const encoder = new TextEncoder();
+    // console.log(encoder.encode(process.env.JWT_PRIVATE_KEY));
 
-    const encoder = new TextEncoder();
-    const jwt = await jwtConstructor.setProtectedHeader({
-      alg: 'HS256', typ: 'JWT'
-    }).setIssuedAt().setExpirationTime('7d').sign(encoder.encode(process.env.JWT_PRIVATE_KEY));
-
-    return this.res.send({jwt});
+    // const jwt = await jwtConstructor.setProtectedHeader({
+    //   alg: 'HS256', typ: 'JWT'
+    // }).setIssuedAt().setExpirationTime('7d').sign(encoder.encode(process.env.JWT_PRIVATE_KEY));
+    // return {jwt};
   }
+
+
+  @get('/users/me')
+  @authenticate('jwt')
+  @response(200, {
+    description: 'User data',
+    content: {'application/json': {schema: UserMe}},
+  })
+  async me(): Promise<string> {
+    console.log(this.request.headers);
+    return 'jajaj';
+  }
+
 
   @post('/users')
   @response(200, {
@@ -86,15 +109,15 @@ export class UserController {
         'application/json': {
           schema: getModelSchemaRef(User, {
             title: 'NewUser',
-
           }),
         },
       },
     })
     user: User,
-  ): Promise<User> {
+  ): Promise<UserModel> {
     return this.userRepository.create(user);
   }
+
 
   @get('/users/count')
   @response(200, {
@@ -106,6 +129,7 @@ export class UserController {
   ): Promise<Count> {
     return this.userRepository.count(where);
   }
+
 
   @get('/users')
   @response(200, {
@@ -120,10 +144,11 @@ export class UserController {
     },
   })
   async find(
-    @param.filter(User) filter?: Filter<User>,
-  ): Promise<User[]> {
+    @param.filter(User) filter?: Filter<UserModel>,
+  ): Promise<UserModel[]> {
     return this.userRepository.find(filter);
   }
+
 
   @patch('/users')
   @response(200, {
@@ -144,6 +169,7 @@ export class UserController {
     return this.userRepository.updateAll(user, where);
   }
 
+
   @get('/users/{id}')
   @response(200, {
     description: 'User model instance',
@@ -155,10 +181,11 @@ export class UserController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(User, {exclude: 'where'}) filter?: FilterExcludingWhere<User>
-  ): Promise<User> {
+    @param.filter(User, {exclude: 'where'}) filter?: FilterExcludingWhere<UserModel>
+  ): Promise<UserModel> {
     return this.userRepository.findById(id, filter);
   }
+
 
   @patch('/users/{id}')
   @response(204, {
@@ -178,6 +205,7 @@ export class UserController {
     await this.userRepository.updateById(id, user);
   }
 
+
   @put('/users/{id}')
   @response(204, {
     description: 'User PUT success',
@@ -188,6 +216,7 @@ export class UserController {
   ): Promise<void> {
     await this.userRepository.replaceById(id, user);
   }
+
 
   @del('/users/{id}')
   @response(204, {
